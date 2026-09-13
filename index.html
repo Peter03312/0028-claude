@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>变钟法换位谱验真台</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>变钟法换位谱验真台</h1>
+        <p class="subtitle">
+          逐轮逐换位生成钟位行：仅当计划终点首次回到起始行且全程无重复时判为
+          <strong>真 · 闭合</strong>；出现重复判为<strong>假</strong>；无重复但未回到起始行为<strong>未闭合</strong>。
+        </p>
+      </header>
+
+      <section class="panel" id="input-panel">
+        <div class="field">
+          <label for="stage">钟数 N（4–8 口）</label>
+          <select id="stage">
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="start">起始排列（1 至 N 各出现一次，空格分隔）</label>
+          <input id="start" type="text" value="1 2 3 4" autocomplete="off" />
+        </div>
+
+        <div class="field">
+          <label for="notation">
+            记谱（token 以空格分隔；<code>x</code> 或严格递增且不重复的位置号）
+          </label>
+          <textarea
+            id="notation"
+            rows="3"
+            placeholder="例如：x 14 x 12 x 14 x 12"
+          ></textarea>
+          <div id="token-strip" class="token-strip" aria-live="polite"></div>
+        </div>
+
+        <div class="field">
+          <label for="rounds">计划重复轮数（含首轮，即整列 token 的总执行轮数）</label>
+          <input id="rounds" type="text" value="1" autocomplete="off" />
+        </div>
+
+        <div class="actions">
+          <button id="verify-btn" type="button">逐行验真</button>
+          <span class="hint">提示：在记谱框中按 Ctrl/⌘ + Enter 可立即验真</span>
+        </div>
+      </section>
+
+      <section id="errors" class="panel errors hidden"></section>
+
+      <section id="result" class="hidden">
+        <div id="verdict" class="verdict"></div>
+
+        <div id="conflict-box" class="panel conflict hidden">
+          <h2>首次冲突</h2>
+          <div id="conflict-detail"></div>
+        </div>
+
+        <div class="panel">
+          <h2>逐行轨迹</h2>
+          <p id="trace-summary" class="hint"></p>
+          <div class="table-wrap">
+            <table id="trace-table">
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>轮次</th>
+                  <th>轮内换位</th>
+                  <th>token</th>
+                  <th>钟位行</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

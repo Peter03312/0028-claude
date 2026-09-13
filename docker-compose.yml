@@ -1,0 +1,20 @@
+services:
+  # 常驻服务：构建后以 nginx 提供纯静态页面，所有计算都在浏览器完成。
+  web:
+    build:
+      context: .
+      target: web
+    image: method-verifier-web:latest
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
+
+  # 一次性验收服务：运行自动化测试并执行生产构建，结束后退出（退出码即验收结论）。
+  # 使用方式：docker compose run --rm verify
+  verify:
+    build:
+      context: .
+      target: builder
+    image: method-verifier-builder:latest
+    command: ["sh", "-c", "npm run test:ci && npm run build"]
+    restart: "no"

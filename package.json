@@ -1,0 +1,19 @@
+{
+  "name": "method-verifier",
+  "version": "1.0.0",
+  "private": true,
+  "description": "变钟法换位谱纯前端验真台",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ci": "vitest --run"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.4"
+  }
+}

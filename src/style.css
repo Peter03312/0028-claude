@@ -1,0 +1,257 @@
+:root {
+  --bg: #f4f2ec;
+  --panel: #fffdf8;
+  --ink: #2b2620;
+  --muted: #6f675c;
+  --line: #d9d2c3;
+  --accent: #7a3b12;
+  --ok: #1e6b34;
+  --ok-bg: #e4f3e7;
+  --bad: #9b1c1c;
+  --bad-bg: #fbe6e6;
+  --warn: #8a5a00;
+  --warn-bg: #fdf1d8;
+  --mark: #ffe08a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    'Noto Serif SC', 'Songti SC', 'SimSun', Georgia, serif;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+
+header h1 {
+  margin: 0 0 6px;
+  font-size: 1.8rem;
+  letter-spacing: 0.04em;
+}
+
+.subtitle {
+  margin: 0 0 22px;
+  color: var(--muted);
+  max-width: 720px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 2px rgba(60, 45, 20, 0.05);
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+code {
+  background: #efe9db;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.92em;
+}
+
+select,
+input,
+textarea {
+  width: 100%;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+
+select {
+  width: auto;
+  min-width: 90px;
+}
+
+textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+button {
+  font: inherit;
+  font-weight: 700;
+  padding: 9px 22px;
+  border-radius: 7px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff8ef;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.hidden {
+  display: none;
+}
+
+/* 记谱 token 定位条 */
+.token-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.token-chip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 2px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.token-chip.bad {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+
+.token-chip .chip-msg {
+  font-family: inherit;
+  margin-left: 6px;
+  font-size: 0.82rem;
+}
+
+/* 错误面板 */
+.errors {
+  border-color: #d8a5a5;
+  background: var(--bad-bg);
+}
+
+.errors h2 {
+  margin: 0 0 8px;
+  color: var(--bad);
+  font-size: 1.05rem;
+}
+
+.errors ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.errors .where {
+  font-weight: 700;
+}
+
+/* 判定横幅 */
+.verdict {
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+
+.verdict.closed {
+  background: var(--ok-bg);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.verdict.false {
+  background: var(--bad-bg);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.verdict.open {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.conflict {
+  border-color: var(--bad);
+}
+
+.conflict h2 {
+  margin: 0 0 8px;
+  color: var(--bad);
+  font-size: 1.05rem;
+}
+
+.conflict-row {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.05rem;
+  margin: 4px 0;
+}
+
+/* 轨迹表 */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 6px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+tbody tr:hover {
+  background: #f7f1e4;
+}
+
+tr.row-dup td {
+  background: var(--bad-bg);
+  font-weight: 700;
+}
+
+tr.row-start td {
+  background: var(--ok-bg);
+}
+
+tr.row-endpoint td {
+  outline: 2px solid var(--warn);
+  outline-offset: -2px;
+}
