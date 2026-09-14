@@ -146,4 +146,120 @@ describe('界面装配与验真交互', () => {
     expect(errors).toMatch(/严格递增/);
     expect(errors).toMatch(/越界/);
   });
+
+  describe('长乐段分页：所有行都必须可逐行复核', () => {
+    const pager = () => document.getElementById('trace-pager-top');
+    const btnByText = (host, text) =>
+      [...host.querySelectorAll('button')].find((b) =>
+        b.textContent.includes(text),
+      );
+
+    it('超过单页时分页渲染，首页/上一页/下一页/末页逐行可达', () => {
+      setValue('stage', '4');
+      setValue('start', '1 2 3 4');
+      // 1300 个换位 + 起始行 = 1301 行（每页 500 行 → 3 页）
+      setValue('notation', 'x');
+      setValue('rounds', '1300');
+      clickVerify();
+
+      expect(pager().classList.contains('hidden')).toBe(false);
+      const rows = () =>
+        document.querySelectorAll('#trace-table tbody tr');
+
+      // 第 1 页：行 0–499
+      expect(rows().length).toBe(500);
+      expect(rows()[0].id).toBe('trace-row-0');
+      expect(rows()[499].id).toBe('trace-row-499');
+
+      // 下一页：行 500–999
+      btnByText(pager(), '下一页').click();
+      expect(rows().length).toBe(500);
+      expect(rows()[0].id).toBe('trace-row-500');
+
+      // 末页：行 1000–1300，最终行（终点）必须可见
+      btnByText(pager(), '末页').click();
+      expect(rows().length).toBe(301);
+      expect(rows()[300].id).toBe('trace-row-1300');
+      expect(rows()[300].textContent).toContain('1 2 3 4');
+
+      // 上一页 / 首页
+      btnByText(pager(), '上一页').click();
+      expect(rows()[0].id).toBe('trace-row-500');
+      btnByText(pager(), '首页').click();
+      expect(rows()[0].id).toBe('trace-row-0');
+
+      // 顶部与底部各有一个分页器
+      expect(
+        document.getElementById('trace-pager-bottom').classList.contains(
+          'hidden',
+        ),
+      ).toBe(false);
+    });
+
+    it('“终点”快捷跳转直达最后一页并展示最终行', () => {
+      btnByText(pager(), '终点').click();
+      const rows = document.querySelectorAll('#trace-table tbody tr');
+      expect(rows[300].id).toBe('trace-row-1300');
+      expect(rows[300].textContent).toContain('1 2 3 4');
+    });
+
+    it('页码输入可转到任意页', () => {
+      const input = pager().querySelector('.pager-input');
+      input.value = '2';
+      input.dispatchEvent(
+        new dom.window.KeyboardEvent('keydown', {
+          key: 'Enter',
+          bubbles: true,
+        }),
+      );
+      const rows = document.querySelectorAll('#trace-table tbody tr');
+      expect(rows.length).toBe(500);
+      expect(rows[0].id).toBe('trace-row-500');
+      expect(
+        document.getElementById('trace-summary').textContent,
+      ).toMatch(/第 2\/3 页/);
+    });
+
+    it('冲突计划下提供冲突①②快捷跳转，且最终行仍可在末页复核', () => {
+      // x 12 x 两轮（6 换位）在中途即冲突；这里重复 300 轮（900 换位）
+      setValue('notation', 'x 12 x');
+      setValue('rounds', '300');
+      clickVerify();
+
+      expect(
+        document.getElementById('verdict').classList.contains('false'),
+      ).toBe(true);
+      const jump1 = btnByText(pager(), '冲突①');
+      const jump2 = btnByText(pager(), '冲突②');
+      expect(jump1).toBeTruthy();
+      expect(jump2).toBeTruthy();
+
+      jump1.click();
+      let rows = document.querySelectorAll('#trace-table tbody tr');
+      expect(
+        document.getElementById('trace-row-2'),
+      ).not.toBeNull(); // 首次位置：第 1 轮第 2 个换位后的 2134
+
+      jump2.click();
+      rows = document.querySelectorAll('#trace-table tbody tr');
+      expect(
+        document.getElementById('trace-row-4'),
+      ).not.toBeNull();
+
+      // 即使已有冲突，末页仍可复核最终行
+      btnByText(pager(), '末页').click();
+      rows = document.querySelectorAll('#trace-table tbody tr');
+      expect(rows[rows.length - 1].id).toBe('trace-row-900');
+    });
+
+    it('短乐段不显示分页器', () => {
+      setValue('notation', 'x 14 x 12 x 14 x 34');
+      setValue('rounds', '3');
+      clickVerify();
+      expect(pager().classList.contains('hidden')).toBe(true);
+      expect(
+        document.querySelectorAll('#trace-table tbody tr').length,
+      ).toBe(25);
+    });
+  });
 });

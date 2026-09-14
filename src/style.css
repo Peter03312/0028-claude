@@ -255,3 +255,73 @@ tr.row-endpoint td {
   outline: 2px solid var(--warn);
   outline-offset: -2px;
 }
+
+/* 分页器：全部行可达，含关键行快捷跳转 */
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.pager-btn {
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 400;
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+}
+
+.pager-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  filter: none;
+}
+
+.pager-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pager-btn.pager-current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff8ef;
+  font-weight: 700;
+}
+
+.pager-gap {
+  color: var(--muted);
+  padding: 0 2px;
+}
+
+.pager-goto,
+.pager-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.pager-input {
+  width: 68px;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.pager-jump {
+  border-style: dashed;
+}
+
+.pager-locate {
+  margin-left: 10px;
+  font-size: 0.82rem;
+  padding: 1px 8px;
+}

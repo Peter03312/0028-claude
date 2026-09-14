@@ -7,7 +7,7 @@ import {
 } from './core/verifier.js';
 
 const MAX_STEPS = 1_000_000;
-const MAX_RENDERED_ROWS = 20_000;
+const PAGE_SIZE = 500;
 
 const els = {
   stage: document.getElementById('stage'),
@@ -23,7 +23,13 @@ const els = {
   conflictDetail: document.getElementById('conflict-detail'),
   traceSummary: document.getElementById('trace-summary'),
   traceBody: document.querySelector('#trace-table tbody'),
+  pagerTop: document.getElementById('trace-pager-top'),
+  pagerBottom: document.getElementById('trace-pager-bottom'),
 };
+
+// 最近一次验真结果与当前轨迹页（完整轨迹保留在内存中，分页只是视图）
+let currentResult = null;
+let currentPage = 1;
 
 function identityStart(n) {
   return Array.from({ length: n }, (_, i) => i + 1).join(' ');
@@ -127,6 +133,9 @@ function renderConflict(conflict, tokenCount) {
     conflict.firstLocation,
     tokenCount,
   )}（行号 ${conflict.firstIndex}）：${formatRow(conflict.row)}`;
+  first.appendChild(
+    makeLocateButton('在轨迹中定位', conflict.firstIndex),
+  );
   els.conflictDetail.appendChild(first);
 
   const second = document.createElement('div');
@@ -135,6 +144,9 @@ function renderConflict(conflict, tokenCount) {
     conflict.secondLocation,
     tokenCount,
   )}（行号 ${conflict.secondIndex}）：${formatRow(conflict.row)}`;
+  second.appendChild(
+    makeLocateButton('在轨迹中定位', conflict.secondIndex),
+  );
   els.conflictDetail.appendChild(second);
 }
 
@@ -152,17 +164,47 @@ function rowClass(entry, result) {
   return classes.join(' ');
 }
 
-function renderTrace(result) {
-  els.traceBody.innerHTML = '';
-  const shown = result.trace.slice(0, MAX_RENDERED_ROWS + 1);
+function jumpToRowIndex(index) {
+  if (!currentResult) return;
+  if (index < 0 || index > currentResult.totalSteps) return;
+  currentPage = Math.floor(index / PAGE_SIZE) + 1;
+  renderTracePage();
+  document
+    .getElementById('trace-panel')
+    ?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+}
+
+function makeLocateButton(label, rowIndex) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pager-btn pager-locate';
+  btn.textContent = label;
+  btn.addEventListener('click', () => jumpToRowIndex(rowIndex));
+  return btn;
+}
+
+function renderTracePage() {
+  if (!currentResult) return;
+  const { trace } = currentResult;
+  const pageCount = Math.max(1, Math.ceil(trace.length / PAGE_SIZE));
+  if (currentPage > pageCount) currentPage = pageCount;
+  if (currentPage < 1) currentPage = 1;
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, trace.length);
+
   const frag = document.createDocumentFragment();
-  for (const entry of shown) {
+  for (let i = start; i < end; i += 1) {
+    const entry = trace[i];
     const tr = document.createElement('tr');
-    tr.className = rowClass(entry, result);
+    tr.id = `trace-row-${entry.index}`;
+    tr.className = rowClass(entry, currentResult);
     const cells = [
       String(entry.index),
       entry.index === 0 ? '—' : `第 ${entry.round} 轮`,
-      entry.index === 0 ? '起始' : `${entry.stepInRound}/${result.tokens.length}`,
+      entry.index === 0
+        ? '起始'
+        : `${entry.stepInRound}/${currentResult.tokens.length}`,
       entry.index === 0 ? '—' : entry.token,
       formatRow(entry.row),
     ];
@@ -173,16 +215,143 @@ function renderTrace(result) {
     }
     frag.appendChild(tr);
   }
+  els.traceBody.innerHTML = '';
   els.traceBody.appendChild(frag);
+  renderPager(pageCount);
 
-  if (result.totalSteps > MAX_RENDERED_ROWS) {
-    els.traceSummary.textContent =
-      `共生成 ${result.totalSteps + 1} 行；为保持流畅，仅展示前 ${
-        MAX_RENDERED_ROWS + 1
-      } 行（冲突判定仍基于全部行）。`;
-  } else {
-    els.traceSummary.textContent = `共 ${result.totalSteps + 1} 行（含起始行）。`;
+  els.traceSummary.textContent =
+    `共 ${trace.length} 行（含起始行）；当前第 ${currentPage}/${pageCount} 页，` +
+    `显示行 ${start}–${end - 1}（每页 ${PAGE_SIZE} 行，全部行均可翻页复核）。`;
+}
+
+function makePagerButton(text, target, opts = {}) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pager-btn';
+  btn.textContent = text;
+  if (opts.disabled) {
+    btn.disabled = true;
   }
+  if (opts.onClick) {
+    btn.addEventListener('click', opts.onClick);
+  } else if (typeof target === 'number') {
+    btn.addEventListener('click', () => {
+      currentPage = target;
+      renderTracePage();
+    });
+  }
+  return btn;
+}
+
+function makeQuickJump(label, rowIndex) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pager-btn pager-jump';
+  btn.textContent = label;
+  btn.addEventListener('click', () => jumpToRowIndex(rowIndex));
+  return btn;
+}
+
+function renderPager(pageCount) {
+  for (const host of [els.pagerTop, els.pagerBottom]) {
+    host.innerHTML = '';
+    if (pageCount <= 1) {
+      host.classList.add('hidden');
+      continue;
+    }
+    host.classList.remove('hidden');
+
+    host.appendChild(
+      makePagerButton('« 首页', 1, { disabled: currentPage === 1 }),
+    );
+    host.appendChild(
+      makePagerButton('‹ 上一页', currentPage - 1, {
+        disabled: currentPage === 1,
+      }),
+    );
+
+    // 页号：当前页前后各 2 页，外加首末页
+    const pageNums = new Set([
+      1,
+      pageCount,
+      currentPage - 2,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      currentPage + 2,
+    ]);
+    let last = 0;
+    for (const p of [...pageNums].filter((n) => n >= 1 && n <= pageCount)
+      .sort((a, b) => a - b)) {
+      if (p - last > 1) {
+        const gap = document.createElement('span');
+        gap.className = 'pager-gap';
+        gap.textContent = '…';
+        host.appendChild(gap);
+      }
+      const btn = makePagerButton(String(p), p);
+      if (p === currentPage) {
+        btn.classList.add('pager-current');
+        btn.disabled = true;
+      }
+      host.appendChild(btn);
+      last = p;
+    }
+
+    host.appendChild(
+      makePagerButton('下一页 ›', currentPage + 1, {
+        disabled: currentPage === pageCount,
+      }),
+    );
+    host.appendChild(
+      makePagerButton('末页 »', pageCount, {
+        disabled: currentPage === pageCount,
+      }),
+    );
+
+    const jumpWrap = document.createElement('span');
+    jumpWrap.className = 'pager-goto';
+    jumpWrap.appendChild(document.createTextNode('转到第 '));
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '1';
+    input.max = String(pageCount);
+    input.value = String(currentPage);
+    input.className = 'pager-input';
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const p = Number(input.value);
+        if (Number.isInteger(p) && p >= 1 && p <= pageCount) {
+          currentPage = p;
+          renderTracePage();
+        }
+      }
+    });
+    jumpWrap.appendChild(input);
+    jumpWrap.appendChild(document.createTextNode(` / ${pageCount} 页`));
+    host.appendChild(jumpWrap);
+
+    // 关键行快捷跳转
+    const quick = document.createElement('span');
+    quick.className = 'pager-quick';
+    quick.appendChild(makeQuickJump('起始行', 0));
+    if (currentResult.conflict) {
+      quick.appendChild(
+        makeQuickJump('冲突①', currentResult.conflict.firstIndex),
+      );
+      quick.appendChild(
+        makeQuickJump('冲突②', currentResult.conflict.secondIndex),
+      );
+    }
+    quick.appendChild(makeQuickJump('终点', currentResult.totalSteps));
+    host.appendChild(quick);
+  }
+}
+
+function renderTrace(result) {
+  currentResult = result;
+  currentPage = 1;
+  renderTracePage();
 }
 
 function verify() {
